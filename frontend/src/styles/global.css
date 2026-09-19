@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
+@theme {
+    --font-sans: 'Outfit', sans-serif;
+
+    --color-forest-dark: #0f2e24;
+    --color-deep-eco: #12372a;
+    --color-dark-section: #0b3d2e;
+    --color-soft-mint: #a7f3d0;
+    --color-eco-light: #86efac;
+    --color-pale-green: #dcfce7;
+    --color-primary-teal: #0ea5a4;
+    --color-teal-hover: #0f766e;
+    --color-bright-teal: #14b8a6;
+    --color-teal-soft-bg: #ccfbf1;
+    --color-warm-yellow: #facc15;
+    --color-golden-accent: #fbbf24;
+    --color-amber-highlight: #f59e0b;
+    --color-soft-yellow-bg: #fef9c3;
+    --color-off-white: #f8fafc;
+    --color-text-main: #1f2937;
+    --color-text-muted: #6b7280;
+    --color-border: #e2e8f0;
+    --color-white: #ffffff;
+
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+
+    --animate-fade-in: fade-in 0.5s ease-in-out;
+}
+
+/* Custom Utilities if needed */
+.glass {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.glass-dark {
+    background: rgba(15, 46, 36, 0.8);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+}

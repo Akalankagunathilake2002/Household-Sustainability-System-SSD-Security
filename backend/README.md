@@ -1,0 +1,1 @@
+A Household Sustainability System involves managing a home as an integrated ecosystem, optimizing energy, water, and waste to minimize environmental impact while maximizing efficiency. It combines structural, energy-efficient, and behavioral changes—such as insulation, solar panels, and smart consumption—to reduce costs, improve health, and lower carbon footprints. 

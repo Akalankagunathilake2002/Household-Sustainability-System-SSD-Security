@@ -1,0 +1,25 @@
+config:
+  target: "http://127.0.0.1:5001"
+  phases:
+    - duration: 60
+      arrivalRate: 5
+      name: "Sustained load"
+    - duration: 30
+      arrivalRate: 10
+      rampTo: 50
+      name: "Ramp up to peak"
+  defaults:
+    headers:
+      Content-Type: "application/json"
+
+scenarios:
+  - name: "Public Auth Flow - Register Initiate"
+    flow:
+      - post:
+          url: "/api/auth/register/initiate"
+          json:
+            email: "loadtest-{{ $randomString() }}@example.com"
+  - name: "Public Products Flow"
+    flow:
+      - get:
+          url: "/api/products"

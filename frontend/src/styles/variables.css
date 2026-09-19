@@ -1,0 +1,39 @@
+:root {
+  /* Dark Green */
+  --color-forest-dark: #0f2e24;
+  --color-deep-eco: #12372a;
+  --color-dark-section: #0b3d2e;
+
+  /* Light Green */
+  --color-soft-mint: #a7f3d0;
+  --color-eco-light: #86efac;
+  --color-pale-green: #dcfce7;
+
+  /* Teal */
+  --color-primary-teal: #0ea5a4;
+  --color-teal-hover: #0f766e;
+  --color-bright-teal: #14b8a6;
+  --color-teal-soft-bg: #ccfbf1;
+
+  /* Yellow */
+  --color-warm-yellow: #facc15;
+  --color-golden-accent: #fbbf24;
+  --color-amber-highlight: #f59e0b;
+  --color-soft-yellow-bg: #fef9c3;
+
+  /* Neutrals & UI */
+  --color-white: #ffffff;
+  --color-off-white: #f8fafc;
+  --color-text-main: #1f2937;
+  --color-text-muted: #6b7280;
+  --color-border: #e2e8f0;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+
+  /* Transitions */
+  --transition-fast: 0.2s ease;
+  --transition-normal: 0.3s ease;
+}
