@@ -7,6 +7,7 @@ const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString()
 
 const RegistrationOTP = require('../models/RegistrationOTP');
 const Settings = require('../models/Settings');
+const Roles = require('../utils/roles');
 
 // Step 1: Initiate Registration (Send OTP)
 // exports.initiateRegister = async (req, res) => {
@@ -132,6 +133,17 @@ exports.completeRegister = async (req, res) => {
             return res.status(400).json({ msg: 'User already exists' });
         }
 
+        // SECURITY FIX (Vulnerability #1): never trust the client-supplied role.
+        // Previously `role` came straight from req.body, so anyone could register
+        // as "admin". Only non-privileged roles are allowed, and only when the
+        // admin has enabled role selection; everything else becomes "user".
+        const settings = await Settings.findOne();
+        const selfAssignableRoles = [Roles.USER, Roles.WASTE_COLLECTOR];
+        const assignedRole =
+            settings && settings.isRoleSelectionEnabled && selfAssignableRoles.includes(role)
+                ? role
+                : Roles.USER;
+
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
@@ -139,7 +151,7 @@ exports.completeRegister = async (req, res) => {
             username,
             email,
             password: hashedPassword,
-            role,
+            role: assignedRole,
             mobileNumber,
             isVerified: true // Email verified via OTP in Step 2
         });

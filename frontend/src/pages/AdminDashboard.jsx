@@ -319,7 +319,7 @@ const AdminDashboard = () => {
                         <div className="flex items-center justify-between p-4 bg-off-white rounded-xl border border-border">
                             <div>
                                 <strong className="block text-sm text-text-main font-bold">Enable Role Selection</strong>
-                                <p className="text-xs text-text-muted mt-1">If enabled, users can select their role (User/Admin) during registration. Otherwise, default is 'user'.</p>
+                                <p className="text-xs text-text-muted mt-1">If enabled, users can select their role (User/Waste Collector) during registration. Otherwise, default is 'user'. The Admin role can only be assigned by an existing admin, by editing a user below.</p>
                             </div>
                             <button
                                 onClick={handleToggleRoleSelection}
