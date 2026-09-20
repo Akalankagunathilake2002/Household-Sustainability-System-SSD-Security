@@ -1,7 +1,12 @@
-export const API_BASE_URL = "https://household-sustainability-system.onrender.com/api";
+// Override with VITE_API_BASE_URL (e.g. in frontend/.env.local) to point at a local backend.
+export const API_BASE_URL =
+    import.meta.env.VITE_API_BASE_URL ||
+    "https://household-sustainability-system.onrender.com/api";
 
 export const API_ENDPOINTS = {
     AUTH: {
+        GOOGLE_LOGIN: "/auth/google",
+        GOOGLE_EXCHANGE: "/auth/google/exchange",
         REGISTER_INITIATE: "/auth/register/initiate",
         REGISTER_VERIFY: "/auth/register/verify",
         REGISTER_COMPLETE: "/auth/register/complete",

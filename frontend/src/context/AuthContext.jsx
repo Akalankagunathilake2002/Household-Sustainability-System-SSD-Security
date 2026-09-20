@@ -70,6 +70,20 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    // Used by the Google OAuth callback. The backend has already authenticated
+    // the user and issued the app JWT, so there are no credentials to submit here.
+    const loginWithToken = (newToken, newUser) => {
+        if (!newToken || !newUser) {
+            return { success: false, error: 'Invalid login response' };
+        }
+
+        localStorage.setItem('token', newToken);
+        setToken(newToken);
+        setUser(newUser); // Optimistically set user (profile is re-fetched by the effect above)
+        setIsAuthenticated(true);
+        return { success: true, role: newUser.role };
+    };
+
     const logout = () => {
         localStorage.removeItem('token');
         setToken(null);
@@ -89,6 +103,7 @@ export const AuthProvider = ({ children }) => {
             isAuthenticated,
             register,
             login,
+            loginWithToken,
             logout,
             updateUser
         }}>

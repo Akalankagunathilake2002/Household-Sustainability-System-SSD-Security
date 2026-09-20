@@ -6,6 +6,7 @@ import DashboardLayout from "./layouts/DashboardLayout";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import OAuthCallback from "./pages/OAuthCallback";
 import UserDashboard from "./pages/UserDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import UserAudits from "./pages/UserAudits";
@@ -72,6 +73,7 @@ function App() {
               <Route element={<PublicLayout />}>
                 <Route path="/" element={<Home />} />
                 <Route path="/login" element={<Login />} />
+                <Route path="/oauth/callback" element={<OAuthCallback />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/verify-otp" element={<VerifyOTP />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
