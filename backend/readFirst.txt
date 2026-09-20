@@ -1,9 +1,0 @@
-Create a .env file in the root directory of the project and add the following variables:
-
-PORT=5001
-MONGO_URI=mongodb+srv://admin:Cj1fYopndjY6fCmz@cluster0.z3zgd.mongodb.net/EcoPulse?retryWrites=true&w=majority&appName=cluster0
-JWT_SECRET=804e492f0de236bfe433ff8053618ae8e84b29c93f191c8adcdd94bd3ec3b465
-GEMINI_API_KEY=AIzaSyAHoiCwRUrN5soAEfNbMOEatrbJoQGGGYc
-
-EMAIL_USER=dilmithsenupa2@gmail.com
-EMAIL_PASS=fqyc clja ywbn zxdg

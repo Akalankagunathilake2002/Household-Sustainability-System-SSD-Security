@@ -263,7 +263,6 @@ const Register = () => {
                                     className="w-full pl-12 pr-4 py-3 border border-border rounded-xl bg-white focus:outline-none focus:border-primary-teal focus:ring-4 focus:ring-primary-teal/10 appearance-none"
                                 >
                                     <option value="user">User</option>
-                                    <option value="admin">Admin</option>
                                     <option value="waste_collector">Waste Collector</option>
                                 </select>
                             </div>
