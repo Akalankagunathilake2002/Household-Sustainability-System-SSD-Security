@@ -4,10 +4,16 @@ const { fetchFemaDisasters } = require("../services/femaService");
 // CREATE
 exports.createDisaster = async (req, res) => {
   try {
+    // Security: Explicitly whitelist client-editable fields.
+    // Server-controlled attributes such as reportedBy and source must not be accepted from the request body.
+    const { 
+      title, type, status, severity, locationName, latitude, longitude, description
+    } = req.body;
+
     const disaster = await Disaster.create({
-      ...req.body,
+      title, type, status, severity, locationName, latitude, longitude, description,
       reportedBy: req.user.id,
-      source: "manual",
+      source: "manual"
     });
 
     res.status(201).json(disaster);
