@@ -148,11 +148,19 @@ exports.updateProduct = async (req, res) => {
       product.co2Saved = newCo2;
     }
 
-    if (req.file) {
-      req.body.imageUrl = req.file.path;
-    }
+    // Security: Only allow certain fields to be updated
+    // Prevent mass assignment of server-controlled attributes such as seller and co2Saved.
+    const allowedFields = ["title", "description", "price", "category", "condition", "status"];
 
-    Object.assign(product, req.body);
+    allowedFields.forEach((field) => {
+      if (req.body[field] !== undefined) {
+        product[field] = req.body[field];
+      }
+    });
+
+    if (req.file) {
+      product.imageUrl = req.file.path;
+    }
 
     await product.save();
 
