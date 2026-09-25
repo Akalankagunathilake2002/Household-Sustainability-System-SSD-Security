@@ -121,6 +121,8 @@ exports.getArticleById = async (req, res) => {
 // 🟢 UPDATE ARTICLE (ADMIN ONLY)
 exports.updateArticle = async (req, res) => {
   try {
+    // Security: Only update fields intentionally exposed by the article
+    // edit form. Prevent mass assignment of protected fields such as createdBy and timestamps.
     const allowedFields = [ "title", "content", "category" ];
 
     const updateData = {};
