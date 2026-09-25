@@ -4,7 +4,14 @@ build/
 **/.env
 .env
 .env.*
+!.env.example
 .DS_Store
+
+# Secret / credential notes files (never commit real secrets)
+**/readFirst.txt
+**/secrets.txt
+*.pem
+*.key
 .vscode/
 coverage/
 *.log
