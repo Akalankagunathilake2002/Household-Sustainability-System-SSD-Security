@@ -150,20 +150,17 @@ exports.updateProduct = async (req, res) => {
 
     // Security: Only allow certain fields to be updated
     // Prevent mass assignment of server-controlled attributes such as seller and co2Saved.
-    const allowed = {
-        title: req.body.title,
-        description: req.body.description,
-        price: req.body.price,
-        category: req.body.category,
-        condition: req.body.condition,
-        status: req.body.status
-    };
+    const allowedFields = ["title", "description", "price", "category", "condition", "status"];
+
+    allowedFields.forEach((field) => {
+      if (req.body[field] !== undefined) {
+        product[field] = req.body[field];
+      }
+    });
 
     if (req.file) {
       product.imageUrl = req.file.path;
     }
-
-    Object.assign(product, allowed);
 
     await product.save();
 
