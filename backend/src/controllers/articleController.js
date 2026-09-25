@@ -121,7 +121,16 @@ exports.getArticleById = async (req, res) => {
 // 🟢 UPDATE ARTICLE (ADMIN ONLY)
 exports.updateArticle = async (req, res) => {
   try {
-    const updateData = { ...req.body };
+    const allowedFields = [ "title", "content", "category" ];
+
+    const updateData = {};
+
+    allowedFields.forEach((field) => {
+      if (req.body[field] !== undefined) {
+        updateData[field] = req.body[field];
+      }
+    });
+    
     if (req.file) {
       updateData.image = req.file.path;
     }
