@@ -1,5 +1,6 @@
 const express = require("express");
 const axios = require("axios");
+const logger = require("../utils/logger");
 
 const router = express.Router();
 
@@ -58,11 +59,17 @@ ${text}
     });
 
   } catch (error) {
-    console.error("FULL ERROR:", error.response?.data || error.message);
+    // Security: Prevent internal error details from being exposed to clients.
+    // Log upstream API error details server-side only; do not forward error.response?.data to the client.
+    logger.error("Gemini API error", {
+      status: error.response?.status,
+      error: error.message
+    });
 
-    return res.status(500).json({
+    const upstreamStatus = error.response?.status || 500;
+    return res.status(upstreamStatus).json({
       status: "Error",
-      message: error.response?.data || error.message
+      message: "Failed to generate recommendations"
     });
   }
 });
