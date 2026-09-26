@@ -7,6 +7,7 @@ const {
   sendOrderConfirmedEmail,
   sendOrderCancelledEmail
 } = require("../services/orderEmailService");
+const logger = require("../utils/logger");
 
 // Create Order (Buy Now)
 exports.createOrder = async (req, res) => {
@@ -49,7 +50,7 @@ exports.createOrder = async (req, res) => {
     const buyer = await User.findById(req.user.id);
     const seller = await User.findById(product.seller);
 
-    sendOrderPlacedEmail(order, product, buyer, seller).catch(err => console.error("Email error:", err));
+    sendOrderPlacedEmail(order, product, buyer, seller).catch(err => logger.error("Order placed email error", { orderId: order._id, error: err.message }));
 
     return res.status(201).json({
       message: "Order placed successfully. Waiting for seller confirmation.",
@@ -57,9 +58,11 @@ exports.createOrder = async (req, res) => {
     });
 
   } catch (error) {
+    // Security: Prevent internal error details from being exposed to clients.
+    // Detailed exception information must remain server-side; return only a safe generic message.
+    logger.error("Order creation failed", { userId: req.user?.id, error: error.message });
     return res.status(500).json({
-      message: "Failed to create order.",
-      error: error.message
+      message: "Failed to create order"
     });
   }
 };
@@ -99,7 +102,7 @@ exports.confirmOrder = async (req, res) => {
     await order.product.save();
     await order.save();
 
-    sendOrderConfirmedEmail(order, order.product, order.buyer, order.seller).catch(err => console.error("Email error:", err));
+    sendOrderConfirmedEmail(order, order.product, order.buyer, order.seller).catch(err => logger.error("Order confirmed email error", { orderId: order._id, error: err.message }));
 
     return res.json({
       message: "Order confirmed successfully. Sustainability points awarded.",
@@ -107,9 +110,11 @@ exports.confirmOrder = async (req, res) => {
     });
 
   } catch (error) {
+    // Security: Prevent internal error details from being exposed to clients.
+    // Detailed exception information must remain server-side; return only a safe generic message.
+    logger.error("Order confirmation failed", { userId: req.user?.id, orderId: req.params?.id, error: error.message });
     return res.status(500).json({
-      message: "Failed to confirm order.",
-      error: error.message
+      message: "Failed to confirm order"
     });
   }
 };
@@ -151,7 +156,7 @@ exports.cancelOrder = async (req, res) => {
     await order.product.save();
     await order.save();
 
-    sendOrderCancelledEmail(order, order.product, order.buyer, order.seller).catch(err => console.error("Email error:", err));
+    sendOrderCancelledEmail(order, order.product, order.buyer, order.seller).catch(err => logger.error("Order cancelled email error", { orderId: order._id, error: err.message }));
 
     return res.json({
       message: "Order cancelled successfully.",
@@ -159,9 +164,11 @@ exports.cancelOrder = async (req, res) => {
     });
 
   } catch (error) {
+    // Security: Prevent internal error details from being exposed to clients.
+    // Detailed exception information must remain server-side; return only a safe generic message.
+    logger.error("Order cancellation failed", { userId: req.user?.id, orderId: req.params?.id, error: error.message });
     return res.status(500).json({
-      message: "Failed to cancel order.",
-      error: error.message
+      message: "Failed to cancel order"
     });
   }
 };
@@ -187,9 +194,11 @@ exports.getMyOrders = async (req, res) => {
     });
 
   } catch (error) {
+    // Security: Prevent internal error details from being exposed to clients.
+    // Detailed exception information must remain server-side; return only a safe generic message.
+    logger.error("My orders retrieval failed", { userId: req.user?.id, error: error.message });
     return res.status(500).json({
-      message: "Failed to retrieve your orders.",
-      error: error.message
+      message: "Failed to retrieve your orders"
     });
   }
 };
@@ -234,9 +243,11 @@ exports.getOrdersReport = async (req, res) => {
     });
 
   } catch (error) {
+    // Security: Prevent internal error details from being exposed to clients.
+    // Detailed exception information must remain server-side; return only a safe generic message.
+    logger.error("Orders report generation failed", { userId: req.user?.id, error: error.message });
     return res.status(500).json({
-      message: "Failed to generate order report.",
-      error: error.message
+      message: "Failed to generate order report"
     });
   }
 };
@@ -263,9 +274,11 @@ exports.getAllOrdersAdmin = async (req, res) => {
     });
 
   } catch (error) {
+    // Security: Prevent internal error details from being exposed to clients.
+    // Detailed exception information must remain server-side; return only a safe generic message.
+    logger.error("Admin orders fetch failed", { userId: req.user?.id, error: error.message });
     return res.status(500).json({
-      message: "Failed to retrieve orders.",
-      error: error.message
+      message: "Failed to retrieve orders"
     });
   }
 };

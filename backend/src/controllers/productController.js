@@ -1,6 +1,7 @@
 const Product = require("../models/Product");
 const { calculateCarbon } = require("../services/carbonService");
 const Roles = require("../utils/roles");
+const logger = require("../utils/logger");
 
 // Create Product
 exports.createProduct = async (req, res) => {
@@ -41,9 +42,11 @@ exports.createProduct = async (req, res) => {
     });
 
   } catch (error) {
+    // Security: Prevent internal error details from being exposed to clients.
+    // Detailed exception information must remain server-side; return only a safe generic message.
+    logger.error("Product creation failed", { userId: req.user?.id, error: error.message });
     return res.status(500).json({
-      message: "An error occurred while creating the product.",
-      error: error.message
+      message: "Failed to create product"
     });
   }
 };
@@ -62,9 +65,11 @@ exports.getProducts = async (req, res) => {
     });
 
   } catch (error) {
+    // Security: Prevent internal error details from being exposed to clients.
+    // Detailed exception information must remain server-side; return only a safe generic message.
+    logger.error("Failed to retrieve products", { error: error.message });
     return res.status(500).json({
-      message: "Failed to retrieve products.",
-      error: error.message
+      message: "Failed to retrieve products"
     });
   }
 };
@@ -82,9 +87,11 @@ exports.getAllProductsAdmin = async (req, res) => {
     });
 
   } catch (error) {
+    // Security: Prevent internal error details from being exposed to clients.
+    // Detailed exception information must remain server-side; return only a safe generic message.
+    logger.error("Admin product fetch failed", { userId: req.user?.id, error: error.message });
     return res.status(500).json({
-      message: "Failed to retrieve products.",
-      error: error.message
+      message: "Failed to retrieve products"
     });
   }
 };
@@ -106,9 +113,11 @@ exports.getProductById = async (req, res) => {
     });
 
   } catch (error) {
+    // Security: Prevent internal error details from being exposed to clients.
+    // Detailed exception information must remain server-side; return only a safe generic message.
+    logger.error("Product retrieval failed", { productId: req.params?.id, error: error.message });
     return res.status(500).json({
-      message: "Error retrieving product.",
-      error: error.message
+      message: "Failed to retrieve product"
     });
   }
 };
@@ -170,9 +179,11 @@ exports.updateProduct = async (req, res) => {
     });
 
   } catch (error) {
+    // Security: Prevent internal error details from being exposed to clients.
+    // Detailed exception information must remain server-side; return only a safe generic message.
+    logger.error("Product update failed", { userId: req.user?.id, productId: req.params?.id, error: error.message });
     return res.status(500).json({
-      message: "Failed to update product.",
-      error: error.message
+      message: "Failed to update product"
     });
   }
 };
@@ -208,9 +219,11 @@ exports.deleteProduct = async (req, res) => {
     });
 
   } catch (error) {
+    // Security: Prevent internal error details from being exposed to clients.
+    // Detailed exception information must remain server-side; return only a safe generic message.
+    logger.error("Product deletion failed", { userId: req.user?.id, productId: req.params?.id, error: error.message });
     return res.status(500).json({
-      message: "Error deleting product.",
-      error: error.message
+      message: "Failed to delete product"
     });
   }
 };
@@ -228,9 +241,11 @@ exports.getMyProducts = async (req, res) => {
     });
 
   } catch (error) {
+    // Security: Prevent internal error details from being exposed to clients.
+    // Detailed exception information must remain server-side; return only a safe generic message.
+    logger.error("My products retrieval failed", { userId: req.user?.id, error: error.message });
     return res.status(500).json({
-      message: "Failed to retrieve your products.",
-      error: error.message
+      message: "Failed to retrieve your products"
     });
   }
 };

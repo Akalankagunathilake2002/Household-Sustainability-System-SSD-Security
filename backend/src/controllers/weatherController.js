@@ -1,4 +1,5 @@
 const axios = require('axios');
+const logger = require('../utils/logger');
 
 exports.getWeather = async (req, res) => {
     try {
@@ -31,10 +32,11 @@ exports.getWeather = async (req, res) => {
 
         res.json(weatherData);
     } catch (err) {
-        console.error('Weather API Error:', err.response?.data || err.message);
+        // Security: Prevent internal error details from being exposed to clients.
+        // Log upstream API error details server-side only; return a safe generic message to the client.
+        logger.error("Weather API error in getWeather", { error: err.message, status: err.response?.status });
         const status = err.response?.status || 500;
-        const msg = err.response?.data?.message || 'Failed to fetch weather data';
-        res.status(status).json({ msg });
+        res.status(status).json({ msg: 'Failed to fetch weather data' });
     }
 };
 
@@ -64,9 +66,10 @@ exports.getForecast = async (req, res) => {
             list: response.data.list
         });
     } catch (err) {
-        console.error('Forecast API Error:', err.response?.data || err.message);
+        // Security: Prevent internal error details from being exposed to clients.
+        // Log upstream API error details server-side only; return a safe generic message to the client.
+        logger.error("Weather API error in getForecast", { error: err.message, status: err.response?.status });
         const status = err.response?.status || 500;
-        const msg = err.response?.data?.message || 'Failed to fetch forecast data';
-        res.status(status).json({ msg });
+        res.status(status).json({ msg: 'Failed to fetch forecast data' });
     }
 };

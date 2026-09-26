@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const ScoringConfig = require('../models/ScoringConfig');
 const SustainabilityAudit = require('../models/SustainabilityAudit');
+const logger = require('../utils/logger');
 
 // Helper function to calculate score
 const calculateScore = (data, config) => {
@@ -89,11 +90,14 @@ exports.createAudit = async (req, res) => {
 
         res.json(audit);
     } catch (err) {
-        console.error("Audit Creation Error:", err.message);
+        // Security: Prevent internal error details from being exposed to clients.
+        // Detailed exception information must remain server-side; return only a safe generic message.
+        logger.error("Audit creation failed", { userId: req.user?.id, error: err.message });
         if (err.name === 'ValidationError') {
-            return res.status(400).json({ msg: err.message, errors: err.errors });
+            // Return a safe generic validation error – do not expose err.errors object or err.message.
+            return res.status(400).json({ msg: 'Audit data validation failed. Please check your input.' });
         }
-        res.status(500).send('Server Error: ' + err.message);
+        res.status(500).json({ msg: 'Failed to create audit' });
     }
 };
 
@@ -107,8 +111,10 @@ exports.getAudit = async (req, res) => {
 
         res.json(audits);
     } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Server Error');
+        // Security: Prevent internal error details from being exposed to clients.
+        // Detailed exception information must remain server-side; return only a safe generic message.
+        logger.error("Audit retrieval failed", { userId: req.user?.id, error: err.message });
+        res.status(500).json({ msg: 'Failed to retrieve audits' });
     }
 };
 
@@ -117,8 +123,10 @@ exports.getAllAudits = async (req, res) => {
         const audits = await SustainabilityAudit.find().populate('user', ['username', 'email']);
         res.json(audits);
     } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Server Error');
+        // Security: Prevent internal error details from being exposed to clients.
+        // Detailed exception information must remain server-side; return only a safe generic message.
+        logger.error("All audits retrieval failed", { userId: req.user?.id, error: err.message });
+        res.status(500).json({ msg: 'Failed to retrieve audits' });
     }
 };
 
@@ -168,11 +176,14 @@ exports.updateAudit = async (req, res) => {
 
         res.json(audit);
     } catch (err) {
-        console.error("Audit Update Error:", err.message);
+        // Security: Prevent internal error details from being exposed to clients.
+        // Detailed exception information must remain server-side; return only a safe generic message.
+        logger.error("Audit update failed", { userId: req.user?.id, auditId: req.params?.id, error: err.message });
         if (err.name === 'ValidationError') {
-            return res.status(400).json({ msg: err.message, errors: err.errors });
+            // Return a safe generic validation error – do not expose err.errors object or err.message.
+            return res.status(400).json({ msg: 'Audit data validation failed. Please check your input.' });
         }
-        res.status(500).send('Server Error: ' + err.message);
+        res.status(500).json({ msg: 'Failed to update audit' });
     }
 };
 
@@ -193,7 +204,9 @@ exports.deleteAudit = async (req, res) => {
 
         res.json({ msg: 'Audit removed' });
     } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Server Error');
+        // Security: Prevent internal error details from being exposed to clients.
+        // Detailed exception information must remain server-side; return only a safe generic message.
+        logger.error("Audit deletion failed", { userId: req.user?.id, auditId: req.params?.id, error: err.message });
+        res.status(500).json({ msg: 'Failed to delete audit' });
     }
 };
