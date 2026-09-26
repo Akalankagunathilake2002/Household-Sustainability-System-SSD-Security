@@ -117,7 +117,21 @@ exports.updateAction = async (req, res) => {
     if (action.createdBy.toString() !== req.user.id)
       return res.status(403).json({ msg: "Only owner can edit" });
 
-    const updateData = { ...req.body };
+    // Security: Only allow fields that are intentionally editable
+    // through the Action update form. Server-controlled fields such as createdBy, isFlagged, likes, comments, and reports must not be accepted directly from req.body.
+    const updateData = {};
+
+    const allowedFields = [
+      "title",
+      "description",
+      "category"
+    ];
+
+    allowedFields.forEach((field) => {
+      if (req.body[field] !== undefined) {
+        updateData[field] = req.body[field];
+      }
+    });
 
     // 🔥 KEEP EXISTING IMAGES (from frontend)
     if (req.body.existingImages) {
