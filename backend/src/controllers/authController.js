@@ -53,6 +53,16 @@ exports.initiateRegister = async (req, res) => {
             });
         }
 
+        // Fix (Vuln #5 - NoSQL operator injection, CWE-943):
+        // Express parses JSON into real objects, so a client can send
+        // { "email": { "$ne": null } }. Without a type check that object
+        // reaches the query as a MongoDB operator instead of a value.
+        if (typeof email !== 'string') {
+            return res.status(400).json({
+                msg: "Email is required"
+            });
+        }
+
         // Check Settings
         let settings = await Settings.findOne();
 
@@ -131,6 +141,14 @@ exports.verifyRegisterOTP = async (req, res) => {
         const { email, otp } = req.body;
 
         if (!email || !otp) {
+            return res.status(400).json({
+                msg: 'Email and OTP are required'
+            });
+        }
+
+        // Fix (Vuln #5 - NoSQL operator injection, CWE-943):
+        // Reject non-string email/otp before they are used in a query.
+        if (typeof email !== 'string' || typeof otp !== 'string') {
             return res.status(400).json({
                 msg: 'Email and OTP are required'
             });
@@ -443,6 +461,15 @@ exports.login = async (req, res) => {
             });
         }
 
+        // Fix (Vuln #5 - NoSQL operator injection, CWE-943):
+        // Require string credentials so a query operator object such as
+        // { "$ne": null } cannot be injected into User.findOne.
+        if (typeof email !== 'string' || typeof password !== 'string') {
+            return res.status(400).json({
+                msg: 'Invalid Credentials'
+            });
+        }
+
         let user = await User.findOne({ email });
 
         if (!user) {
@@ -526,6 +553,17 @@ exports.forgotPassword = async (req, res) => {
     try {
 
         const { email } = req.body;
+
+        // Fix (Vuln #5 - NoSQL operator injection, CWE-943):
+        // Reject a non-string email. Otherwise { "email": { "$ne": null } }
+        // matches the first user in the database and leaks their id, and
+        // { "email": { "$regex": "^a" } } lets an attacker enumerate every
+        // stored email address one character at a time.
+        if (typeof email !== 'string') {
+            return res.status(400).json({
+                msg: 'Invalid email'
+            });
+        }
 
         const user = await User.findOne({ email });
 

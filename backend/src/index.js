@@ -4,6 +4,7 @@ const express = require('express');
 const connectDB = require('./config/db');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
+const mongoSanitize = require('express-mongo-sanitize');
 
 const authMiddleware = require('./middleware/authMiddleware');
 const { admin } = require('./middleware/authMiddleware');
@@ -39,6 +40,12 @@ app.use(express.json({ extended: false }));
 // 4. Cookie Parser
 // Required for Google OAuth state validation
 app.use(cookieParser());
+
+// 5. Fix (Vuln #5 - NoSQL operator injection, CWE-943):
+// Defence in depth. Strip any key starting with '$' or containing '.' from
+// req.body, req.params and req.query, so MongoDB query operators can never be
+// injected even if an individual controller forgets to validate its input.
+app.use(mongoSanitize());
 
 // Define Routes
 app.use('/api/auth', require('./routes/authRoutes'));
