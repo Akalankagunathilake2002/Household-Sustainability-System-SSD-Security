@@ -1,4 +1,5 @@
 const nodemailer = require('nodemailer');
+const logger = require('../utils/logger');
 
 const transporter = nodemailer.createTransport({
     service: 'gmail',
@@ -19,23 +20,20 @@ const sendEmail = async (to, subject, text, html=null) => {
 
     try {
         if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-            console.log('---------------------------------------------------');
-            console.log(`[MOCK EMAIL] To: ${to}`);
-            console.log(`[MOCK EMAIL] Subject: ${subject}`);
-            console.log(`[MOCK EMAIL] Body: ${text}`);
-            console.log('---------------------------------------------------');
+            // Security: Prevent sensitive data from being written to application logs.
+            // Authentication credentials, OTPs, tokens, and sensitive request data must not be logged.
+            // In mock mode only log that an email was attempted, never log the recipient, subject, or body
+            // as these may contain OTPs, password-reset links, or other sensitive content.
+            logger.info("Mock email mode active – email send skipped (no credentials configured)");
             return;
         }
         await transporter.sendMail(mailOptions);
-        console.log(`Email sent to ${to}`);
+        logger.info("Email sent successfully");
     } catch (error) {
-        console.error('Error sending email:', error);
-        // Fallback logging for development
-        console.log('---------------------------------------------------');
-        console.log(`[FAILED EMAIL LOG] To: ${to}`);
-        console.log(`[FAILED EMAIL LOG] Subject: ${subject}`);
-        console.log(`[FAILED EMAIL LOG] Body: ${text}`);
-        console.log('---------------------------------------------------');
+        // Security: Prevent internal error details from being exposed to application logs.
+        // Do not log the recipient address, subject, body, or full error object as they may
+        // contain OTPs, credentials, or sensitive SMTP diagnostic information.
+        logger.error("Email send failed", { error: error.message });
     }
 };
 
