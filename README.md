@@ -7,7 +7,7 @@
 - Ummu Salma M. H.
 - U.D.D.S Ranasinghe
 
-## Project
+## Project#
 
 **Household Sustainability System (EcoPulse)** – a MERN application (Express + MongoDB backend, React/Vite frontend) for household energy audits, waste management, disaster alerts, a green marketplace and AI-based sustainability recommendations.
 
