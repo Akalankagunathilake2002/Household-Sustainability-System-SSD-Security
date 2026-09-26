@@ -45,7 +45,11 @@ exports.initiateRegister = async (req, res) => {
         logger.info("Initiate register called");
         const { email } = req.body;
 
-        if (!email) {
+        // Fix (Vuln #5 - NoSQL operator injection, CWE-943):
+        // Require a string email. Without this check an attacker can send
+        // { "email": { "$ne": null } } and the object reaches the query as a
+        // MongoDB operator instead of a value.
+        if (typeof email !== 'string') {
             return res.status(400).json({ msg: "Email is required" });
         }
 
@@ -85,6 +89,13 @@ exports.initiateRegister = async (req, res) => {
 exports.verifyRegisterOTP = async (req, res) => {
     try {
         const { email, otp } = req.body;
+
+        // Fix (Vuln #5 - NoSQL operator injection, CWE-943):
+        // Reject non-string email/otp before they are used in a query.
+        if (typeof email !== 'string' || typeof otp !== 'string') {
+            return res.status(400).json({ msg: 'Invalid or expired OTP' });
+        }
+
         console.log(`Verifying OTP for ${email}: ${otp}`);
         const record = await RegistrationOTP.findOne({ email });
 
@@ -198,6 +209,13 @@ exports.login = async (req, res) => {
             return res.status(400).json({ msg: 'Please provide email and password' });
         }
 
+        // Fix (Vuln #5 - NoSQL operator injection, CWE-943):
+        // Require string credentials so a query operator object such as
+        // { "$ne": null } cannot be injected into User.findOne.
+        if (typeof email !== 'string' || typeof password !== 'string') {
+            return res.status(400).json({ msg: 'Invalid Credentials' });
+        }
+
         let user = await User.findOne({ email });
         if (!user) {
             console.log("User not found:", email);
@@ -244,6 +262,16 @@ exports.login = async (req, res) => {
 exports.forgotPassword = async (req, res) => {
     try {
         const { email } = req.body;
+
+        // Fix (Vuln #5 - NoSQL operator injection, CWE-943):
+        // Reject a non-string email. Otherwise { "email": { "$ne": null } }
+        // matches the first user in the database and leaks their id, and
+        // { "email": { "$regex": "^a" } } lets an attacker enumerate every
+        // stored email address one character at a time.
+        if (typeof email !== 'string') {
+            return res.status(400).json({ msg: 'Invalid email' });
+        }
+
         const user = await User.findOne({ email });
         if (!user) return res.status(404).json({ msg: 'User not found' });
 
