@@ -1,46 +1,7 @@
-// const Article = require("../models/Article");
-
-// // CREATE (ADMIN)
-// exports.createArticle = async (req, res) => {
-//   const article = new Article({
-//     ...req.body,
-//     createdBy: req.user.id,
-//   });
-
-//   await article.save();
-//   res.status(201).json(article);
-// };
-
-// // GET PUBLISHED
-// exports.getArticles = async (req, res) => {
-//   const articles = await Article.find({ isPublished: true })
-//     .sort({ createdAt: -1 });
-
-//   res.json(articles);
-// };
-
-// // UPDATE (ADMIN)
-// exports.updateArticle = async (req, res) => {
-//   const updated = await Article.findByIdAndUpdate(
-//     req.params.id,
-//     req.body,
-//     { new: true }
-//   );
-
-//   res.json(updated);
-// };
-
-// // DELETE (ADMIN)
-// exports.deleteArticle = async (req, res) => {
-//   await Article.findByIdAndDelete(req.params.id);
-//   res.json({ msg: "Deleted" });
-// };
-
-
-
 const Article = require("../models/Article");
+const logger = require("../utils/logger");
 
-// 🟢 CREATE ARTICLE (ADMIN ONLY)
+// CREATE ARTICLE (ADMIN ONLY)
 exports.createArticle = async (req, res) => {
   try {
     const { title, content, category, isPublished } = req.body;
@@ -63,15 +24,17 @@ exports.createArticle = async (req, res) => {
       article,
     });
   } catch (error) {
+    // Security: Prevent internal error details from being exposed to clients.
+    // Detailed exception information must remain server-side; return only a safe generic message.
+    logger.error("Article creation failed", { userId: req.user?.id, error: error.message });
     res.status(500).json({
       success: false,
-      message: "Server error while creating article",
-      error: error.message,
+      message: "Failed to create article",
     });
   }
 };
 
-// 🟢 GET ALL PUBLISHED ARTICLES (PUBLIC)
+// GET ALL PUBLISHED ARTICLES (PUBLIC)
 exports.getArticles = async (req, res) => {
   try {
     const articles = await Article.find({ isPublished: true })
@@ -84,15 +47,17 @@ exports.getArticles = async (req, res) => {
       articles,
     });
   } catch (error) {
+    // Security: Prevent internal error details from being exposed to clients.
+    // Detailed exception information must remain server-side; return only a safe generic message.
+    logger.error("Article fetch failed", { error: error.message });
     res.status(500).json({
       success: false,
-      message: "Server error while fetching articles",
-      error: error.message,
+      message: "Failed to retrieve articles",
     });
   }
 };
 
-// 🟢 GET SINGLE ARTICLE BY ID (PUBLIC)
+// GET SINGLE ARTICLE BY ID (PUBLIC)
 exports.getArticleById = async (req, res) => {
   try {
     const article = await Article.findById(req.params.id)
@@ -110,15 +75,17 @@ exports.getArticleById = async (req, res) => {
       article,
     });
   } catch (error) {
+    // Security: Prevent internal error details from being exposed to clients.
+    // Detailed exception information must remain server-side; return only a safe generic message.
+    logger.error("Article retrieval failed", { articleId: req.params?.id, error: error.message });
     res.status(500).json({
       success: false,
-      message: "Server error while fetching article",
-      error: error.message,
+      message: "Failed to retrieve article",
     });
   }
 };
 
-// 🟢 UPDATE ARTICLE (ADMIN ONLY)
+// UPDATE ARTICLE (ADMIN ONLY)
 exports.updateArticle = async (req, res) => {
   try {
     // Security: Only update fields intentionally exposed by the article
@@ -156,15 +123,17 @@ exports.updateArticle = async (req, res) => {
       article: updatedArticle,
     });
   } catch (error) {
+    // Security: Prevent internal error details from being exposed to clients.
+    // Detailed exception information must remain server-side; return only a safe generic message.
+    logger.error("Article update failed", { userId: req.user?.id, articleId: req.params?.id, error: error.message });
     res.status(500).json({
       success: false,
-      message: "Server error while updating article",
-      error: error.message,
+      message: "Failed to update article",
     });
   }
 };
 
-// 🟢 DELETE ARTICLE (ADMIN ONLY)
+// DELETE ARTICLE (ADMIN ONLY)
 exports.deleteArticle = async (req, res) => {
   try {
     const deletedArticle = await Article.findByIdAndDelete(req.params.id);
@@ -181,10 +150,12 @@ exports.deleteArticle = async (req, res) => {
       message: "Article deleted successfully",
     });
   } catch (error) {
+    // Security: Prevent internal error details from being exposed to clients.
+    // Detailed exception information must remain server-side; return only a safe generic message.
+    logger.error("Article deletion failed", { userId: req.user?.id, articleId: req.params?.id, error: error.message });
     res.status(500).json({
       success: false,
-      message: "Server error while deleting article",
-      error: error.message,
+      message: "Failed to delete article",
     });
   }
 };
