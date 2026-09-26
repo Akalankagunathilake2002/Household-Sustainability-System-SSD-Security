@@ -59,7 +59,9 @@ exports.initiateRegister = async (req, res) => {
 
         const otp = generateOTP();
 
-        logger.info(`Generated OTP: ${otp}`);
+        // Security: Prevent sensitive data from being written to application logs.
+        // Authentication credentials, OTPs, tokens, and sensitive request data must not be logged.
+        logger.info("Registration OTP generated and sent");
 
         await RegistrationOTP.findOneAndUpdate(
             { email },
@@ -85,9 +87,10 @@ exports.initiateRegister = async (req, res) => {
     } catch (err) {
         logger.error("Error in initiateRegister", err);
 
+        // Security: Prevent internal error details from being exposed to clients.
         return res.status(500).json({
             success: false,
-            message: err.message
+            message: "Failed to initiate registration"
         });
     }
 };
@@ -101,23 +104,17 @@ exports.verifyRegisterOTP = async (req, res) => {
     try {
         const { email, otp } = req.body;
 
-        console.log(`Verifying OTP for ${email}: ${otp}`);
-
+        // Security: Prevent sensitive data from being written to application logs.
+        // Do not log OTP values or email addresses.
         const record = await RegistrationOTP.findOne({ email });
 
         if (!record) {
-            console.log(`No OTP record found for ${email}`);
-
             return res.status(400).json({
                 msg: 'Invalid or expired OTP'
             });
         }
 
         if (record.otp !== otp) {
-            console.log(
-                `OTP mismatch for ${email}. Expected: ${record.otp}, Received: ${otp}`
-            );
-
             return res.status(400).json({
                 msg: 'Invalid or expired OTP'
             });
@@ -136,9 +133,10 @@ exports.verifyRegisterOTP = async (req, res) => {
         });
 
     } catch (err) {
-        console.error(err.message);
-
-        res.status(500).send('Server error');
+        // Security: Prevent internal error details from being exposed to clients.
+        // Detailed exception information must remain server-side; return only a safe generic message.
+        logger.error("Error in verifyRegisterOTP", { error: err.message });
+        res.status(500).json({ msg: 'Internal server error' });
     }
 };
 
@@ -344,19 +342,14 @@ exports.verifyOTP = async (req, res) => {
 
 exports.login = async (req, res) => {
 
-    console.log(
-        "Login attempt received for email:",
-        req.body.email
-    );
+    // Security: Prevent sensitive data from being written to application logs.
+    // Do not log login email addresses.
 
     try {
 
         const { email, password } = req.body;
 
         if (!email || !password) {
-
-            console.log("Missing credentials");
-
             return res.status(400).json({
                 msg: 'Please provide email and password'
             });
@@ -365,17 +358,10 @@ exports.login = async (req, res) => {
         let user = await User.findOne({ email });
 
         if (!user) {
-
-            console.log("User not found:", email);
-
             return res.status(400).json({
                 msg: 'Invalid Credentials'
             });
         }
-
-        console.log(
-            "User found, comparing password..."
-        );
 
         const isMatch = await bcrypt.compare(
             password,
@@ -383,37 +369,17 @@ exports.login = async (req, res) => {
         );
 
         if (!isMatch) {
-
-            console.log(
-                "Password mismatch for:",
-                email
-            );
-
             return res.status(400).json({
                 msg: 'Invalid Credentials'
             });
         }
 
-        console.log(
-            "Password matched, checking verification..."
-        );
-
         if (!user.isVerified) {
-
-            console.log(
-                "User not verified:",
-                email
-            );
-
             return res.status(400).json({
                 msg: 'Please verify your email first',
                 userId: user._id
             });
         }
-
-        console.log(
-            "User verified, generating token..."
-        );
 
         const payload = {
             user: {
@@ -422,20 +388,11 @@ exports.login = async (req, res) => {
             }
         };
 
-        console.log(
-            "Payload created:",
-            payload
-        );
-
+        // Security: Prevent sensitive data from being written to application logs.
+        // Do not log JWT payloads, tokens, or credential data.
         if (!process.env.JWT_SECRET) {
-
-            console.error(
-                "JWT_SECRET is missing from environment variables!"
-            );
-
-            throw new Error(
-                "JWT_SECRET is not defined"
-            );
+            logger.error("JWT_SECRET is not configured");
+            throw new Error("JWT_SECRET is not defined");
         }
 
         jwt.sign(
@@ -445,20 +402,12 @@ exports.login = async (req, res) => {
             (err, token) => {
 
                 if (err) {
-
-                    console.error(
-                        "JWT Sign Error:",
-                        err
-                    );
-
+                    // Security: Prevent internal error details from being exposed to clients.
+                    logger.error("JWT sign error during login", { error: err.message });
                     return res.status(500).json({
                         msg: "Token generation failed"
                     });
                 }
-
-                console.log(
-                    "Token generated successfully"
-                );
 
                 res.json({
                     token,
@@ -473,13 +422,10 @@ exports.login = async (req, res) => {
         );
 
     } catch (err) {
-
-        console.error(
-            "UNHANDLED LOGIN EXCEPTION:",
-            err
-        );
-
-        res.status(500).send('Server error');
+        // Security: Prevent internal error details from being exposed to clients.
+        // Detailed exception information must remain server-side; return only a safe generic message.
+        logger.error("Unhandled error in login", { error: err.message });
+        res.status(500).json({ msg: 'Internal server error' });
     }
 };
 
@@ -521,10 +467,9 @@ exports.forgotPassword = async (req, res) => {
         });
 
     } catch (err) {
-
-        console.error(err.message);
-
-        res.status(500).send('Server error');
+        // Security: Prevent internal error details from being exposed to clients.
+        logger.error("Error in forgotPassword", { error: err.message });
+        res.status(500).json({ msg: 'Internal server error' });
     }
 };
 
@@ -576,10 +521,9 @@ exports.resetPassword = async (req, res) => {
         });
 
     } catch (err) {
-
-        console.error(err.message);
-
-        res.status(500).send('Server error');
+        // Security: Prevent internal error details from being exposed to clients.
+        logger.error("Error in resetPassword", { error: err.message });
+        res.status(500).json({ msg: 'Internal server error' });
     }
 };
 
@@ -598,10 +542,9 @@ exports.getMe = async (req, res) => {
         res.json(user);
 
     } catch (err) {
-
-        console.error(err.message);
-
-        res.status(500).send('Server Error');
+        // Security: Prevent internal error details from being exposed to clients.
+        logger.error("Error in getMe", { userId: req.user?.id, error: err.message });
+        res.status(500).json({ msg: 'Internal server error' });
     }
 };
 
@@ -647,9 +590,8 @@ exports.updateProfile = async (req, res) => {
         res.json(user);
 
     } catch (err) {
-
-        console.error(err.message);
-
-        res.status(500).send('Server Error');
+        // Security: Prevent internal error details from being exposed to clients.
+        logger.error("Error in updateProfile", { userId: req.user?.id, error: err.message });
+        res.status(500).json({ msg: 'Internal server error' });
     }
 };
