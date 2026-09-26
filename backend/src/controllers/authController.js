@@ -1,10 +1,35 @@
+const crypto = require('crypto');
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const sendEmail = require('../services/emailService');
 
+// Security Fix #3: Cryptographically secure 6-digit OTP generator
 const generateOTP = () =>
-    Math.floor(100000 + Math.random() * 900000).toString();
+    crypto.randomInt(100000, 1000000).toString();
+
+// Security Fix #3: HMAC hashing for stored OTPs
+const hashOTP = (otp) => {
+    const secret = process.env.OTP_SECRET || process.env.JWT_SECRET || 'ecopulse_otp_secure_hmac_secret';
+    return crypto
+        .createHmac('sha256', secret)
+        .update(String(otp))
+        .digest('hex');
+};
+
+// Security Fix #3: Timing-safe comparison of candidate OTP against stored hash
+const verifyOTPHash = (candidateOtp, storedHash) => {
+    if (!candidateOtp || !storedHash) return false;
+    try {
+        const candidateHash = hashOTP(candidateOtp);
+        const candidateBuf = Buffer.from(candidateHash, 'hex');
+        const storedBuf = Buffer.from(storedHash, 'hex');
+        if (candidateBuf.length !== storedBuf.length) return false;
+        return crypto.timingSafeEqual(candidateBuf, storedBuf);
+    } catch {
+        return false;
+    }
+};
 
 const RegistrationOTP = require('../models/RegistrationOTP');
 const Settings = require('../models/Settings');
@@ -58,6 +83,7 @@ exports.initiateRegister = async (req, res) => {
         }
 
         const otp = generateOTP();
+        const otpHash = hashOTP(otp);
 
         // Security: Prevent sensitive data from being written to application logs.
         // Authentication credentials, OTPs, tokens, and sensitive request data must not be logged.
@@ -65,7 +91,7 @@ exports.initiateRegister = async (req, res) => {
 
         await RegistrationOTP.findOneAndUpdate(
             { email },
-            { email, otp },
+            { email, otpHash, attempts: 0 },
             {
                 upsert: true,
                 new: true
@@ -104,8 +130,12 @@ exports.verifyRegisterOTP = async (req, res) => {
     try {
         const { email, otp } = req.body;
 
-        // Security: Prevent sensitive data from being written to application logs.
-        // Do not log OTP values or email addresses.
+        if (!email || !otp) {
+            return res.status(400).json({
+                msg: 'Email and OTP are required'
+            });
+        }
+
         const record = await RegistrationOTP.findOne({ email });
 
         if (!record) {
@@ -114,11 +144,33 @@ exports.verifyRegisterOTP = async (req, res) => {
             });
         }
 
-        if (record.otp !== otp) {
+        // Security Fix #3: Limit failed verification attempts to 5
+        if ((record.attempts || 0) >= 5) {
+            await RegistrationOTP.deleteOne({ email });
+            return res.status(400).json({
+                msg: 'Maximum verification attempts exceeded. Please request a new OTP.'
+            });
+        }
+
+        const isMatch = verifyOTPHash(otp, record.otpHash) || (record.otp && record.otp === String(otp));
+
+        if (!isMatch) {
+            record.attempts = (record.attempts || 0) + 1;
+            if (record.attempts >= 5) {
+                await RegistrationOTP.deleteOne({ email });
+                return res.status(400).json({
+                    msg: 'Maximum verification attempts exceeded. Please request a new OTP.'
+                });
+            }
+            await record.save();
+
             return res.status(400).json({
                 msg: 'Invalid or expired OTP'
             });
         }
+
+        // Security Fix #3: Single-use invalidation
+        await RegistrationOTP.deleteOne({ email });
 
         // Generate temporary registration token
         const registerToken = jwt.sign(
@@ -284,10 +336,44 @@ exports.verifyOTP = async (req, res) => {
             });
         }
 
-        if (
-            user.otp !== otp ||
-            user.otpExpires < Date.now()
-        ) {
+        if (!user.otpExpires || user.otpExpires < Date.now()) {
+            user.otp = undefined;
+            user.otpHash = undefined;
+            user.otpAttempts = undefined;
+            user.otpExpires = undefined;
+            await user.save();
+            return res.status(400).json({
+                msg: 'Invalid or expired OTP'
+            });
+        }
+
+        // Security Fix #3: Limit failed verification attempts to 5
+        if ((user.otpAttempts || 0) >= 5) {
+            user.otp = undefined;
+            user.otpHash = undefined;
+            user.otpAttempts = undefined;
+            user.otpExpires = undefined;
+            await user.save();
+            return res.status(400).json({
+                msg: 'Maximum verification attempts exceeded. Please request a new OTP.'
+            });
+        }
+
+        const isMatch = verifyOTPHash(otp, user.otpHash) || (user.otp && user.otp === String(otp));
+
+        if (!isMatch) {
+            user.otpAttempts = (user.otpAttempts || 0) + 1;
+            if (user.otpAttempts >= 5) {
+                user.otp = undefined;
+                user.otpHash = undefined;
+                user.otpAttempts = undefined;
+                user.otpExpires = undefined;
+                await user.save();
+                return res.status(400).json({
+                    msg: 'Maximum verification attempts exceeded. Please request a new OTP.'
+                });
+            }
+            await user.save();
             return res.status(400).json({
                 msg: 'Invalid or expired OTP'
             });
@@ -295,6 +381,8 @@ exports.verifyOTP = async (req, res) => {
 
         user.isVerified = true;
         user.otp = undefined;
+        user.otpHash = undefined;
+        user.otpAttempts = undefined;
         user.otpExpires = undefined;
 
         await user.save();
@@ -449,7 +537,9 @@ exports.forgotPassword = async (req, res) => {
 
         const otp = generateOTP();
 
-        user.otp = otp;
+        user.otp = undefined; // Purge plaintext
+        user.otpHash = hashOTP(otp);
+        user.otpAttempts = 0;
         user.otpExpires =
             Date.now() + 10 * 60 * 1000;
 
@@ -495,10 +585,44 @@ exports.resetPassword = async (req, res) => {
             });
         }
 
-        if (
-            user.otp !== otp ||
-            user.otpExpires < Date.now()
-        ) {
+        if (!user.otpExpires || user.otpExpires < Date.now()) {
+            user.otp = undefined;
+            user.otpHash = undefined;
+            user.otpAttempts = undefined;
+            user.otpExpires = undefined;
+            await user.save();
+            return res.status(400).json({
+                msg: 'Invalid or expired OTP'
+            });
+        }
+
+        // Security Fix #3: Limit failed verification attempts to 5
+        if ((user.otpAttempts || 0) >= 5) {
+            user.otp = undefined;
+            user.otpHash = undefined;
+            user.otpAttempts = undefined;
+            user.otpExpires = undefined;
+            await user.save();
+            return res.status(400).json({
+                msg: 'Maximum verification attempts exceeded. Please request a new OTP.'
+            });
+        }
+
+        const isMatch = verifyOTPHash(otp, user.otpHash) || (user.otp && user.otp === String(otp));
+
+        if (!isMatch) {
+            user.otpAttempts = (user.otpAttempts || 0) + 1;
+            if (user.otpAttempts >= 5) {
+                user.otp = undefined;
+                user.otpHash = undefined;
+                user.otpAttempts = undefined;
+                user.otpExpires = undefined;
+                await user.save();
+                return res.status(400).json({
+                    msg: 'Maximum verification attempts exceeded. Please request a new OTP.'
+                });
+            }
+            await user.save();
             return res.status(400).json({
                 msg: 'Invalid or expired OTP'
             });
@@ -512,6 +636,8 @@ exports.resetPassword = async (req, res) => {
         );
 
         user.otp = undefined;
+        user.otpHash = undefined;
+        user.otpAttempts = undefined;
         user.otpExpires = undefined;
 
         await user.save();

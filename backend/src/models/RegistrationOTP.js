@@ -8,7 +8,15 @@ const RegistrationOTPSchema = new mongoose.Schema({
     },
     otp: {
         type: String,
-        required: true
+        required: false
+    },
+    otpHash: {
+        type: String,
+        required: false
+    },
+    attempts: {
+        type: Number,
+        default: 0
     },
     createdAt: {
         type: Date,
@@ -18,3 +26,4 @@ const RegistrationOTPSchema = new mongoose.Schema({
 });
 
 module.exports = mongoose.model('RegistrationOTP', RegistrationOTPSchema);
+

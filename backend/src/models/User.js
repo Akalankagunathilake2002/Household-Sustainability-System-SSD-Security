@@ -87,15 +87,20 @@ const UserSchema = new mongoose.Schema({
     },
 
     otp: {
-
         type: String
+    },
 
+    otpHash: {
+        type: String
+    },
+
+    otpAttempts: {
+        type: Number,
+        default: 0
     },
 
     otpExpires: {
-
         type: Date
-
     },
 
     isVerified: {

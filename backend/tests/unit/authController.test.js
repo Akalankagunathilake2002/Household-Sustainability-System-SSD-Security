@@ -49,6 +49,66 @@ describe('Auth Controller Unit Tests (Jest)', () => {
 
             expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ skipOtp: true, registerToken: 'mockToken' }));
         });
+        test('should generate secure OTP and store otpHash when OTP is enabled', async () => {
+            req.body.email = 'test@example.com';
+            Settings.findOne.mockResolvedValue({ isRegistrationOtpEnabled: true });
+            RegistrationOTP.findOneAndUpdate.mockResolvedValue({});
+
+            await authController.initiateRegister(req, res);
+
+            expect(RegistrationOTP.findOneAndUpdate).toHaveBeenCalledWith(
+                { email: 'test@example.com' },
+                expect.objectContaining({
+                    email: 'test@example.com',
+                    otpHash: expect.any(String),
+                    attempts: 0
+                }),
+                expect.any(Object)
+            );
+            expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+                success: true,
+                msg: "OTP sent"
+            }));
+        });
+    });
+
+    describe('verifyRegisterOTP', () => {
+        test('should return 400 if email or otp missing', async () => {
+            req.body = { email: 'test@example.com' };
+            await authController.verifyRegisterOTP(req, res);
+            expect(res.status).toHaveBeenCalledWith(400);
+            expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ msg: 'Email and OTP are required' }));
+        });
+
+        test('should return 400 if record not found', async () => {
+            req.body = { email: 'test@example.com', otp: '123456' };
+            RegistrationOTP.findOne.mockResolvedValue(null);
+
+            await authController.verifyRegisterOTP(req, res);
+            expect(res.status).toHaveBeenCalledWith(400);
+            expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ msg: 'Invalid or expired OTP' }));
+        });
+
+        test('should lock out and delete record if maximum attempts reached', async () => {
+            req.body = { email: 'test@example.com', otp: '999999' };
+            const mockRecord = {
+                email: 'test@example.com',
+                otpHash: 'dummyhash',
+                attempts: 4,
+                save: jest.fn()
+            };
+            RegistrationOTP.findOne.mockResolvedValue(mockRecord);
+            RegistrationOTP.deleteOne.mockResolvedValue({});
+
+            await authController.verifyRegisterOTP(req, res);
+
+            expect(mockRecord.attempts).toBe(5);
+            expect(RegistrationOTP.deleteOne).toHaveBeenCalledWith({ email: 'test@example.com' });
+            expect(res.status).toHaveBeenCalledWith(400);
+            expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+                msg: 'Maximum verification attempts exceeded. Please request a new OTP.'
+            }));
+        });
     });
 
     describe('login', () => {
@@ -78,3 +138,4 @@ describe('Auth Controller Unit Tests (Jest)', () => {
         });
     });
 });
+
