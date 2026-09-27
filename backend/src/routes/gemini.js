@@ -1,18 +1,48 @@
 const express = require("express");
 const axios = require("axios");
+const rateLimit = require("express-rate-limit");
 const logger = require("../utils/logger");
+const authMiddleware = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
-router.post("/generate", async (req, res) => {
+// Fix (Vuln #13 - CWE-770 Allocation of Resources Without Limits):
+// Cap how often a caller may spend the paid Gemini API quota.
+const geminiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20,                  // 20 requests per window per caller
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    status: "Error",
+    message: "Too many requests. Please try again later."
+  }
+});
+
+// Fix (Vuln #13 - CWE-770): cap prompt size so a caller cannot send a huge
+// payload and inflate upstream token usage.
+const MAX_PROMPT_LENGTH = 2000;
+
+// Fix (Vuln #13 - CWE-306 Missing Authentication for Critical Function):
+// This endpoint spends a paid third-party API quota, so it must not be
+// reachable anonymously. authMiddleware rejects requests without a valid JWT.
+router.post("/generate", authMiddleware, geminiLimiter, async (req, res) => {
   try {
     // ------ Validate Input ------
     const { text } = req.body;
 
-    if (!text || text.trim() === "") {
+    if (!text || typeof text !== "string" || text.trim() === "") {
       return res.status(400).json({
         status: "Error",
         message: "Text prompt is required"
+      });
+    }
+
+    // Fix (Vuln #13 - CWE-770): reject oversized prompts.
+    if (text.length > MAX_PROMPT_LENGTH) {
+      return res.status(400).json({
+        status: "Error",
+        message: `Text prompt must be ${MAX_PROMPT_LENGTH} characters or fewer`
       });
     }
 
@@ -33,8 +63,12 @@ ${text}
 `;
 
     // ------ Gemini API Call ------
+    // Fix (Vuln #13 - CWE-598 Sensitive Data in URL):
+    // The API key was previously interpolated into the query string, where it
+    // can be captured by server logs, proxies and browser history. It is now
+    // sent in the x-goog-api-key request header instead.
     const response = await axios.post(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
       {
         contents: [
           {
@@ -44,7 +78,8 @@ ${text}
       },
       {
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "x-goog-api-key": process.env.GEMINI_API_KEY
         }
       }
     );
